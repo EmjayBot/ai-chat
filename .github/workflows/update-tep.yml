@@ -1,0 +1,33 @@
+name: Update TEP Index
+on:
+  schedule: [{cron: "0 */6 * * *"}] # every 6 hours
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch latest + top topics
+        run: |
+          curl -s "https://forum.theeastpacific.com/latest.json?per_page=100" -o latest.json
+          curl -s "https://forum.theeastpacific.com/top.json?period=monthly" -o top.json
+      - name: Build index
+        run: |
+          node -e "
+          const fs=require('fs');
+          const l=JSON.parse(fs.readFileSync('latest.json'));
+          const t=JSON.parse(fs.readFileSync('top.json'));
+          const all=[...l.topic_list.topics, ...t.topic_list.topics];
+          const seen=new Set(); const out=[];
+          for(const x of all){ if(!seen.has(x.id)){ seen.add(x.id);
+            out.push({title:x.title, url:\`https://forum.theeastpacific.com/t/\${x.slug}/\${x.id}\`, excerpt:(x.excerpt||'').replace(/<[^>]*>/g,'').slice(0,200) })
+          }}
+          fs.writeFileSync('forum-index.json', JSON.stringify(out.slice(0,400),null,2));
+          "
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add forum-index.json
+          git commit -m "update forum index" || exit 0
+          git push

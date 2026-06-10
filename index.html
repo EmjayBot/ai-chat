@@ -1,82 +1,203 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>TEP Community Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-<script type="importmap">{"imports":{"@mlc-ai/web-llm":"https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm"}}</script>
-<style>:root{color-scheme:dark}*{scrollbar-width:thin}</style>
+<script type="importmap">
+{
+  "imports": {
+    "@mlc-ai/web-llm": "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+ .glass { backdrop-filter: blur(12px); }
+</style>
 </head>
-<body class="bg-[#030712] text-slate-200">
-<div class="min-h-screen flex flex-col">
-<header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 backdrop-blur">
- <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-  <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center font-black">TEP</div><h1 class="text-lg font-semibold">TEP Community Assistant</h1></div>
-  <div class="flex items-center gap-3 text-xs">
-   <label class="flex items-center gap-1.5 cursor-pointer"><input id="use-ai" type="checkbox" checked class="accent-violet-500"> Use AI model</label>
-   <label class="flex items-center gap-1.5 cursor-pointer"><input id="use-index" type="checkbox" checked class="accent-violet-500"> Search forum</label>
-   <select id="model" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"><option>Phi-3.5-mini-instruct-q4f16_1-MLC</option><option>Llama-3.2-1B-Instruct-q4f32_1-MLC</option></select>
+<body class="bg-[#030712] text-slate-200 min-h-screen flex flex-col">
+<header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 glass">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center font-black">TEP</div>
+      <div>
+        <h1 class="text-lg font-semibold">TEP Community Assistant</h1>
+        <p class="text-xs text-slate-400 -mt-1">Runs in your browser • Uses local forum index</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="model" class="bg-slate-900 border border-slate-700 rounded-lg text-xs px-2 py-1.5">
+        <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini</option>
+        <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B</option>
+        <option value="Gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B</option>
+      </select>
+      <label class="flex items-center gap-1.5 text-xs bg-slate-900 px-2 py-1.5 rounded-lg border border-slate-800">
+        <input id="use-index" type="checkbox" checked class="accent-violet-500">
+        Search forum
+      </label>
+    </div>
   </div>
- </div>
- <div class="border-t border-slate-900 px-4 py-1 flex justify-between text-[11px] text-slate-500 max-w-6xl mx-auto"><span id="index-status">Loading index…</span><span id="model-status">Model: idle</span></div>
+  <div class="border-t border-slate-900">
+    <div class="max-w-5xl mx-auto px-4 py-1 flex justify-between text- text-slate-500">
+      <span id="index-status">Loading forum-index.json…</span>
+      <span id="model-status">Model: idle</span>
+    </div>
+  </div>
 </header>
 
-<main class="flex-1 max-w-3xl w-full mx-auto flex flex-col">
- <div id="chat" class="flex-1 overflow-y-auto px-4 py-6"><div id="messages" class="space-y-4"></div></div>
- <div class="sticky bottom-0 bg-[#030712] border-t border-slate-900 p-3">
-  <div class="flex gap-2"><textarea id="input" rows="1" placeholder="Ask about citizenship, laws, Concordat…" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none resize-none"></textarea><button id="send" class="px-4 py-2 bg-violet-600 rounded-xl text-sm disabled:opacity-50">Send</button></div>
- </div>
+<main class="flex-1 max-w-5xl w-full mx-auto flex flex-col">
+  <div id="chat" class="flex-1 overflow-y-auto px-4 py-6">
+    <div id="messages" class="max-w-3xl mx-auto space-y-4"></div>
+  </div>
+  <div class="sticky bottom-0 bg-[#030712] border-t border-slate-900 p-4">
+    <div class="max-w-3xl mx-auto flex gap-2">
+      <textarea id="input" rows="1" placeholder="Ask about citizenship, laws, Magisterium…" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-violet-500/30"></textarea>
+      <button id="send" disabled class="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 rounded-xl text-sm font-medium">Send</button>
+      <button id="clear" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm">Clear</button>
+    </div>
+  </div>
 </main>
-</div>
 
 <script type="module">
 import { CreateMLCEngine } from "@mlc-ai/web-llm";
-const useAI = document.getElementById('use-ai');
+
+const modelSelect = document.getElementById('model');
 const useIndex = document.getElementById('use-index');
-const modelSel = document.getElementById('model');
-const idxStatus = document.getElementById('index-status');
-const mdlStatus = document.getElementById('model-status');
-const msgs = document.getElementById('messages');
+const indexStatus = document.getElementById('index-status');
+const modelStatus = document.getElementById('model-status');
+const messagesEl = document.getElementById('messages');
+const chat = document.getElementById('chat');
 const input = document.getElementById('input');
-const send = document.getElementById('send');
+const sendBtn = document.getElementById('send');
+const clearBtn = document.getElementById('clear');
 
-let engine=null, forum=[];
-fetch('./forum-index.json').then(r=>r.json()).then(d=>{forum=d; idxStatus.textContent=`Loaded ${forum.length} topics`}).catch(()=>{idxStatus.textContent='No index'; useIndex.checked=false});
+let engine = null;
+let forumIndex = [];
+const systemPrompt = "You are the TEP community assistant. Answer concisely. Use provided forum links when relevant.";
+let history = [{role:"system", content: systemPrompt}];
 
-function search(q){ const t=q.toLowerCase().split(/\W+/).filter(w=>w.length>2); return forum.map(f=>{const txt=(f.title+' '+f.excerpt).toLowerCase(); let s=0; t.forEach(w=>{if(txt.includes(w))s++}); return {...f,score:s}}).filter(f=>f.score>0).sort((a,b)=>b.score-a.score).slice(0,5); }
+// 1. Load forum index (no CORS - same origin)
+fetch('./forum-index.json')
+ .then(r => r.ok? r.json() : [])
+ .then(data => {
+    forumIndex = Array.isArray(data)? data : [];
+    indexStatus.textContent = `Loaded ${forumIndex.length} topics`;
+  })
+ .catch(() => {
+    indexStatus.textContent = 'No forum-index.json found';
+    useIndex.checked = false;
+    useIndex.disabled = true;
+  });
 
-function add(role,html){ const d=document.createElement('div'); d.className='flex '+(role==='user'?'justify-end':'justify-start'); d.innerHTML=`<div class="max-w-[85%] rounded-2xl px-4 py-2 text-sm ${role==='user'?'bg-indigo-600/20 border border-indigo-500/30':'bg-slate-900 border border-slate-800'}">${html}</div>`; msgs.appendChild(d); msgs.parentElement.scrollTop=msgs.parentElement.scrollHeight; }
+function addMsg(role, text, sources=[]) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex ' + (role==='user'? 'justify-end' : 'justify-start');
+  const bubble = document.createElement('div');
+  bubble.className = 'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm border ' + (role==='user'? 'bg-indigo-600/20 border-indigo-500/30' : 'bg-slate-900 border-slate-800');
 
-async function init(){ if(!useAI.checked) return; mdlStatus.textContent='Loading…'; try{ engine=await CreateMLCEngine(modelSel.value,{initProgressCallback:p=>mdlStatus.textContent=`${Math.round(p.progress*100)}%`}); mdlStatus.textContent='Ready'; send.disabled=false; }catch(e){mdlStatus.textContent='Error';} }
+  if (sources.length) {
+    const src = document.createElement('div');
+    src.className = 'mb-2 flex flex-wrap gap-1';
+    sources.forEach(s => {
+      const a = document.createElement('a');
+      a.href = s.url; a.target = '_blank';
+      a.className = 'text- bg-slate-800 px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-700';
+      a.textContent = s.title.slice(0,35);
+      src.appendChild(a);
+    });
+    bubble.appendChild(src);
+  }
 
-useAI.onchange=()=>{ if(useAI.checked &&!engine) init(); mdlStatus.textContent = useAI.checked? (engine?'Ready':'idle') : 'Off'; send.disabled =!useAI.checked &&!useIndex.checked; };
-useIndex.onchange=()=>{ send.disabled =!useAI.checked &&!useIndex.checked; };
-
-async function handle(){
- const q=input.value.trim(); if(!q) return; input.value=''; add('user',q);
- const results = useIndex.checked? search(q) : [];
-
- if(!useAI.checked){
-   // AI OFF — just show forum results
-   if(!results.length){ add('assistant','No matching forum topics found.'); return; }
-   const html = results.map(r=>`<div class="mb-3"><a href="${r.url}" target="_blank" class="text-violet-300 hover:underline font-medium">${r.title}</a><div class="text-xs text-slate-400 mt-1">${r.excerpt||''}</div></div>`).join('');
-   add('assistant', `<div class="text-[11px] uppercase text-slate-500 mb-2">Top forum matches</div>${html}`);
-   return;
- }
-
- // AI ON
- if(!engine) await init();
- const context = results.length? `\n\nRelevant TEP forum threads:\n${results.map(r=>`- ${r.title}: ${r.url}`).join('\n')}` : '';
- const messages = [{role:'system',content:'You are TEP assistant. Answer concisely and cite forum links when given.'},{role:'user',content:q+context}];
- const el = document.createElement('div'); add('assistant',''); msgs.lastChild.querySelector('div>div').appendChild(el);
- const stream = await engine.chat.completions.create({messages,stream:true,temperature:0.3});
- let out=''; for await(const c of stream){ out+=c.choices[0].delta.content||''; el.textContent=out; }
+  const p = document.createElement('div');
+  p.className = 'whitespace-pre-wrap';
+  p.textContent = text;
+  bubble.appendChild(p);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return p;
 }
 
-send.onclick=handle; input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handle()}};
-init();
-add('assistant','Toggle "Use AI model" off for instant forum search, or leave it on for AI answers using forum results.');
+function search(q) {
+  if (!forumIndex.length) return [];
+  const terms = q.toLowerCase().split(/\W+/).filter(t=>t.length>2);
+  return forumIndex.map(i => {
+    const txt = (i.title+' '+(i.excerpt||'')).toLowerCase();
+    let score = 0;
+    terms.forEach(t => { if(txt.includes(t)) score++; });
+    return {...i, score};
+  }).filter(i=>i.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+}
+
+async function loadModel(id) {
+  if (engine) try { await engine.unload(); } catch {}
+  sendBtn.disabled = true;
+  modelStatus.textContent = 'Model: downloading…';
+  try {
+    engine = await CreateMLCEngine(id, {
+      initProgressCallback: p => {
+        modelStatus.textContent = `Model: ${p.text} ${Math.round(p.progress*100)}%`;
+      }
+    });
+    modelStatus.textContent = 'Model: ready';
+    sendBtn.disabled = false;
+  } catch(e) {
+    modelStatus.textContent = 'Model: error';
+    addMsg('assistant', 'Failed to load: '+e.message);
+  }
+}
+
+async function send() {
+  const q = input.value.trim();
+  if (!q ||!engine) return;
+  input.value = '';
+  addMsg('user', q);
+
+  const sources = useIndex.checked? search(q) : [];
+  let prompt = q;
+  if (sources.length) {
+    prompt = `Question: ${q}\n\nRelevant TEP forum threads:\n${sources.map((s,i)=>`${i+1}. ${s.title} - ${s.url}`).join('\n')}\n\nAnswer using these when helpful.`;
+  }
+
+  history.push({role:'user', content: prompt});
+  const outEl = addMsg('assistant', '', sources);
+  sendBtn.disabled = true;
+
+  try {
+    const stream = await engine.chat.completions.create({
+      messages: history,
+      stream: true,
+      temperature: 0.3,
+      max_tokens: 700
+    });
+    let full = '';
+    for await (const chunk of stream) {
+      full += chunk.choices[0]?.delta?.content || '';
+      outEl.textContent = full;
+      chat.scrollTop = chat.scrollHeight;
+    }
+    history.push({role:'assistant', content: full});
+  } catch(e) {
+    outEl.textContent = 'Error: '+e.message;
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+sendBtn.onclick = send;
+clearBtn.onclick = () => { history=[{role:"system",content:systemPrompt}]; messagesEl.innerHTML=''; addMsg('assistant','Cleared. Ask me about TEP!'); };
+input.onkeydown = e => { if(e.key==='Enter' &&!e.shiftKey){ e.preventDefault(); send(); } };
+modelSelect.onchange = () => loadModel(modelSelect.value);
+
+// start
+addMsg('assistant', 'Hello! I run entirely in your browser. Ask about citizenship, the Concordat, or anything TEP.');
+loadModel(modelSelect.value);
 </script>
 </body>
 </html>

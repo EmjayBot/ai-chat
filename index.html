@@ -2,69 +2,96 @@
 <html lang="en" class="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TEP Assistant</title>
+<title>Kainoa — TEP Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 <script type="importmap">{"imports":{"@mlc-ai/web-llm":"https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm"}}</script>
+<style>:root{color-scheme:dark}.glass{backdrop-filter:blur(12px)}</style>
 </head>
-<body class="bg-[#030712] text-slate-200">
-<header class="p-3 border-b border-slate-800">
- <div class="max-w-5xl mx-auto flex justify-between">
-  <b>TEP Assistant</b>
-  <div class="flex gap-3 text-xs">
-   <label><input id="ai" type="checkbox" checked> AI</label>
-   <label><input id="forum" type="checkbox" checked> Forum</label>
-   <label><input id="faq" type="checkbox" checked> Assistant</label>
+<body class="bg-[#030712] text-slate-200 flex flex-col min-h-screen">
+<header class="sticky top-0 z-40 bg-slate-950/80 glass border-b border-slate-800">
+ <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+  <div class="flex items-center gap-3">
+   <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-[12px] shadow-lg">K</div>
+   <div>
+    <h1 class="text-[18px] font-semibold leading-none">Kainoa</h1>
+    <p class="text-[11px] text-slate-400 -mt-0.5">TEP Community Assistant</p>
+   </div>
+  </div>
+  <div class="flex items-center gap-2">
+   <select id="model" class="bg-slate-900 border border-slate-700 rounded-lg text-xs px-2 py-1.5">
+    <option>Phi-3.5-mini-instruct-q4f16_1-MLC</option>
+    <option>Llama-3.2-1B-Instruct-q4f32_1-MLC</option>
+   </select>
+   <label class="text-xs flex items-center gap-1.5 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5"><input id="use-ai" type="checkbox" class="w-3.5 h-3.5 accent-cyan-500">AI</label>
+   <label class="text-xs flex items-center gap-1.5 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5"><input id="use-forum" type="checkbox" checked class="w-3.5 h-3.5 accent-cyan-500">Forum</label>
+   <label class="text-xs flex items-center gap-1.5 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5"><input id="use-faq" type="checkbox" checked class="w-3.5 h-3.5 accent-cyan-500">Kainoa</label>
   </div>
  </div>
- <div class="max-w-5xl mx-auto text-[11px] text-slate-500 flex justify-between"><span id="s1">loading...</span><span id="s2"></span></div>
+ <div class="max-w-6xl mx-auto px-4 pb-1.5 flex justify-between text-[11px] text-slate-500">
+  <span id="idx-status">Loading…</span><span id="ai-status">AI: off</span>
+ </div>
 </header>
-<main class="max-w-2xl mx-auto p-4">
- <div id="m" class="h-[70vh] overflow-y-auto space-y-2 mb-2"></div>
- <div class="flex gap-2"><input id="i" class="flex-1 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-sm"><button id="go" class="bg-violet-600 px-3 rounded text-sm">Send</button></div>
+
+<main class="flex-1 max-w-3xl w-full mx-auto px-4 py-6 flex flex-col">
+ <div id="msgs" class="flex-1 overflow-y-auto space-y-4"></div>
+ <div class="mt-4 relative">
+  <textarea id="input" rows="1" placeholder="Ask Kainoa about citizenship…" class="w-full bg-slate-900/70 border border-slate-800 rounded-2xl px-4 py-3 pr-24 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40"></textarea>
+  <button id="send" class="absolute right-2 bottom-2 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-medium">Send</button>
+ </div>
 </main>
+
+<footer class="border-t border-slate-900 bg-slate-950/50 mt-auto">
+ <div class="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-3 gap-8 text-sm">
+  <div>
+   <h3 class="font-semibold text-slate-200 mb-2">Meet Kainoa</h3>
+   <p class="text-slate-400 leading-relaxed">Kainoa means "sea of freedom" — your guide to The East Pacific. He has three brains you control: <b>Kainoa</b> (instant answers from responses.json), <b>Forum</b> (searches forum-index.json), and <b>AI</b> (runs Phi-3.5 locally in your browser).</p>
+  </div>
+  <div>
+   <h3 class="font-semibold text-slate-200 mb-2">Powered by</h3>
+   <ul class="text-slate-400 space-y-1">
+    <li>• WebLLM & MLC — 100% local</li>
+    <li>• forum.theeastpacific.com</li>
+    <li>• Your responses.json</li>
+    <li>• No data sent to servers</li>
+   </ul>
+  </div>
+  <div>
+   <h3 class="font-semibold text-slate-200 mb-2">TEP Links</h3>
+   <div class="grid grid-cols-2 gap-1.5 text-slate-300">
+    <a href="https://forum.theeastpacific.com" class="hover:text-cyan-400">Forum</a>
+    <a href="https://www.nationstates.net/region=the_east_pacific" class="hover:text-cyan-400">Region</a>
+    <a href="https://discord.gg/theeastpacific" class="hover:text-cyan-400">Discord</a>
+    <a href="https://tep.wiki" class="hover:text-cyan-400">Wiki</a>
+    <a href="https://forum.theeastpacific.com/t/concordat" class="hover:text-cyan-400">Concordat</a>
+    <a href="https://forum.theeastpacific.com/t/citizenship-application" class="hover:text-cyan-400">Apply</a>
+   </div>
+  </div>
+ </div>
+ <div class="border-t border-slate-900/60">
+  <div class="max-w-6xl mx-auto px-4 py-3 text-[11px] text-slate-500 text-center">Kainoa v1.0 • Built for The East Pacific • Runs entirely in your browser</div>
+ </div>
+</footer>
+
 <script type="module">
-import {CreateMLCEngine} from "@mlc-ai/web-llm";
-const ai=document.getElementById('ai'), forum=document.getElementById('forum'), faq=document.getElementById('faq');
-const s1=document.getElementById('s1'), s2=document.getElementById('s2'), m=document.getElementById('m'), inp=document.getElementById('i'), btn=document.getElementById('go');
-let engine=null, forumIdx=[], responses=[], hist=[{role:'system',content:'Helpful TEP assistant'}];
+import { CreateMLCEngine } from "@mlc-ai/web-llm";
+const useAI=document.getElementById('use-ai'),useForum=document.getElementById('use-forum'),useFAQ=document.getElementById('use-faq'),model=document.getElementById('model'),idxStatus=document.getElementById('idx-status'),aiStatus=document.getElementById('ai-status'),msgs=document.getElementById('msgs'),input=document.getElementById('input'),send=document.getElementById('send');
+let engine=null,forum=[],responses=[],hist=[{role:'system',content:'You are Kainoa, the friendly TEP assistant. Answer concisely.'}];
 
-// LOAD BOTH JSON FILES
-Promise.all([
- fetch('./forum-index.json').then(r=>r.json()).catch(()=>[]),
- fetch('./responses.json').then(r=>r.json()).catch(()=>[])
-]).then(([f,r])=>{
- forumIdx=f; responses=r;
- s1.textContent=`${f.length} forum topics, ${r.length} canned answers`;
-});
+Promise.all([fetch('./forum-index.json').then(r=>r.json()).catch(()=>[]),fetch('./responses.json').then(r=>r.json()).catch(()=>[])]).then(([f,r])=>{forum=f;responses=r;idxStatus.textContent=`${f.length} topics • ${r.length} Kainoa answers`});
 
-function add(t,u){const d=document.createElement('div');d.className='p-2 rounded text-sm '+(u?'bg-indigo-900/40':'bg-slate-800');d.style.whiteSpace='pre-wrap';d.textContent=t;m.appendChild(d);m.scrollTop=1e9}
+function add(t,u=false){const w=document.createElement('div');w.className='flex '+(u?'justify-end':'');const b=document.createElement('div');b.className='max-w-[85%] px-4 py-2.5 rounded-2xl text-[14px] whitespace-pre-wrap '+(u?'bg-cyan-600/20 border border-cyan-500/30':'bg-slate-900 border border-slate-800');b.textContent=t;w.appendChild(b);msgs.appendChild(w);msgs.scrollTop=msgs.scrollHeight}
 
-function matchFAQ(q){
- if(!faq.checked||!responses.length) return null;
- const l=q.toLowerCase();
- return responses.find(r=>r.keywords.some(k=>l.includes(k.toLowerCase())));
-}
+const findFAQ=q=>{if(!useFAQ.checked) return null; const l=q.toLowerCase(); return responses.find(r=>r.keywords.some(k=>l.includes(k.toLowerCase())))}
+const search=q=>{if(!useForum.checked) return []; const t=q.toLowerCase().split(/\W+/).filter(x=>x.length>2); return forum.map(i=>{const s=(i.title+' '+i.excerpt).toLowerCase(); let c=0;t.forEach(w=>{if(s.includes(w))c++});return{...i,c}}).filter(i=>i.c>0).sort((a,b)=>b.c-a.c).slice(0,3)}
 
-function search(q){
- if(!forum.checked) return [];
- const w=q.toLowerCase().split(/\W+/);
- return forumIdx.map(x=>{let s=0;w.forEach(t=>{if((x.title+x.excerpt).toLowerCase().includes(t))s++});return{...x,s}}).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,3);
-}
+async function loadAI(){if(engine) return; aiStatus.textContent='AI: loading…'; engine=await CreateMLCEngine(model.value,{initProgressCallback:p=>aiStatus.textContent=`AI: ${Math.round(p.progress*100)}%`}); aiStatus.textContent='AI: ready'}
 
-async function ensureAI(){if(!ai.checked||engine) return; s2.textContent='loading AI'; btn.disabled=true; engine=await CreateMLCEngine('Phi-3.5-mini-instruct-q4f16_1-MLC',{initProgressCallback:p=>s2.textContent=Math.round(p.progress*100)+'%'}); s2.textContent='ready'; btn.disabled=false}
+useAI.onchange=async()=>{if(useAI.checked) await loadAI(); else{aiStatus.textContent='AI: off'; if(engine){engine.unload();engine=null}}}
 
-ai.onchange=()=>{if(ai.checked)ensureAI();else{s2.textContent='off';engine=null}}
-
-async function send(){
- const q=inp.value.trim();if(!q)return;inp.value='';add(q,true);
- const f=matchFAQ(q);
- if(f){add(f.answer); const hits=search(q); if(hits.length) add('Related:\n'+hits.map(h=>h.title+'\n'+h.url).join('\n\n')); return}
- if(forum.checked&&!ai.checked){const h=search(q);add(h.length?h.map(x=>x.title+'\n'+x.url).join('\n\n'):'No matches');return}
- if(ai.checked){await ensureAI(); let p=q; const h=search(q); if(h.length)p+='\n\nForum:\n'+h.map(x=>x.title+' '+x.url).join('\n'); hist.push({role:'user',content:p}); const out=document.createElement('div');out.className='p-2 bg-slate-800 rounded text-sm';m.appendChild(out); const s=await engine.chat.completions.create({messages:hist,stream:true}); let t=''; for await(const c of s){t+=c.choices[0].delta.content||'';out.textContent=t} hist.push({role:'assistant',content:t}); return}
- add('Turn on AI, Forum, or Assistant');
-}
-btn.onclick=send; inp.onkeydown=e=>e.key==='Enter'&&send(); ensureAI();
+async function go(){const q=input.value.trim();if(!q)return;input.value='';add(q,true);const f=findFAQ(q);if(f){add(f.answer);const h=search(q);if(h.length)add('Kainoa found:\n'+h.map(x=>x.title).join('\n'));return}if(useForum.checked&&!useAI.checked){const h=search(q);add(h.length?h.map(x=>`${x.title}\n${x.url}`).join('\n\n'):'No matches');return}if(useAI.checked){await loadAI();let p=q;const h=search(q);if(h.length)p+='\n\nForum:\n'+h.map(x=>`${x.title} - ${x.url}`).join('\n');hist.push({role:'user',content:p});const o=document.createElement('div');o.className='max-w-[85%] px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-[14px]';msgs.appendChild(o);const s=await engine.chat.completions.create({messages:hist,stream:true});let t='';for await(const c of s){t+=c.choices[0].delta.content||'';o.textContent=t}hist.push({role:'assistant',content:t});return}add('Enable Kainoa, Forum, or AI above.')}
+send.onclick=go;input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}};
+add("Aloha! I'm Kainoa. I'm off to a fast start with instant answers — turn on AI above if you want the full brain.");
 </script>
 </body>
 </html>

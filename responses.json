@@ -1,0 +1,22 @@
+[
+  {
+    "keywords": ["citizen", "citizenship", "become a citizen", "how to join"],
+    "title": "Citizenship",
+    "response": "To become a citizen of The East Pacific:\n\n1. Move your WA nation to TEP\n2. Post in the citizenship thread: https://forum.theeastpacific.com/t/citizenship-application\n3. Take the oath in that post\n4. Wait for Magisterium approval (usually 24h)\n\nYou keep citizenship by maintaining WA endorsement of the Delegate."
+  },
+  {
+    "keywords": ["endorse", "endorsement", "endorse delegate"],
+    "title": "Endorsements",
+    "response": "Endorse Delegate @Altys and Viziers daily. It raises regional influence and protects against raids. Check the WADP thread for the current list: https://forum.theeastpacific.com/t/wadp"
+  },
+  {
+    "keywords": ["magisterium", "magister", "law", "vote"],
+    "title": "Magisterium",
+    "response": "The Magisterium is TEP's legislature. Any citizen can apply after 2 weeks. Current laws are in the Concordat: https://forum.theeastpacific.com/t/concordat"
+  },
+  {
+    "keywords": ["concordat", "constitution"],
+    "title": "Concordat",
+    "response": "The Concordat is our constitution. Read it here: https://forum.theeastpacific.com/t/concordat — it defines the Delegate, Magisterium, Conclave, and Praesidium."
+  }
+]

@@ -15,54 +15,58 @@
 </script>
 <style>
   :root { color-scheme: dark; }
-    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+    * { scrollbar-width: thin; }
  .glass { backdrop-filter: blur(12px); }
 </style>
 </head>
-<body class="bg-[#030712] text-slate-200 min-h-screen flex flex-col">
-<header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 glass">
-  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center font-black">TEP</div>
-      <div>
-        <h1 class="text-lg font-semibold">TEP Community Assistant</h1>
-        <p class="text-xs text-slate-400 -mt-1">Runs in your browser • Uses local forum index</p>
+<body class="bg-[#030712] text-slate-200">
+<div class="min-h-screen flex flex-col">
+  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 glass">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center font-black">TEP</div>
+        <div>
+          <h1 class="text-lg font-semibold">TEP Community Assistant</h1>
+          <p class="text-xs text-slate-400 -mt-1">Local AI + forum search</p>
+        </div>
+      <div class="flex items-center gap-3">
+        <!-- MODEL SELECTOR -->
+        <div class="flex items-center gap-1.5">
+          <label class="text-xs text-slate-400">Model</label>
+          <select id="model" class="bg-slate-900 border border-slate-700 rounded-lg text-xs px-2 py-1.5">
+            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini (default)</option>
+            <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">Phi-3 Mini 4K</option>
+            <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B</option>
+            <option value="Gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B</option>
+          </select>
+        </div>
+        <!-- FORUM SEARCH CHECKBOX -->
+        <label class="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5 cursor-pointer">
+          <input id="use-index" type="checkbox" checked class="w-3.5 h-3.5 accent-violet-500" />
+          <span class="text-xs">Search forum.theeastpacific.com</span>
+        </label>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <select id="model" class="bg-slate-900 border border-slate-700 rounded-lg text-xs px-2 py-1.5">
-        <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini</option>
-        <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B</option>
-        <option value="Gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B</option>
-      </select>
-      <label class="flex items-center gap-1.5 text-xs bg-slate-900 px-2 py-1.5 rounded-lg border border-slate-800">
-        <input id="use-index" type="checkbox" checked class="accent-violet-500">
-        Search forum
-      </label>
+    <div class="border-t border-slate-900">
+      <div class="max-w-6xl mx-auto px-4 py-1.5 flex justify-between text-[11px] text-slate-500">
+        <div id="index-status">Checking forum index…</div>
+        <div id="model-status">Model: idle</div>
+      </div>
     </div>
-  </div>
-  <div class="border-t border-slate-900">
-    <div class="max-w-5xl mx-auto px-4 py-1 flex justify-between text- text-slate-500">
-      <span id="index-status">Loading forum-index.json…</span>
-      <span id="model-status">Model: idle</span>
-    </div>
-  </div>
-</header>
+  </header>
 
-<main class="flex-1 max-w-5xl w-full mx-auto flex flex-col">
-  <div id="chat" class="flex-1 overflow-y-auto px-4 py-6">
-    <div id="messages" class="max-w-3xl mx-auto space-y-4"></div>
-  </div>
-  <div class="sticky bottom-0 bg-[#030712] border-t border-slate-900 p-4">
+  <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+    <div id="messages" class="space-y-4"></div>
+  </main>
+
+  <div class="sticky bottom-0 bg-[#030712] border-t border-slate-900 px-4 py-3">
     <div class="max-w-3xl mx-auto flex gap-2">
-      <textarea id="input" rows="1" placeholder="Ask about citizenship, laws, Magisterium…" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-violet-500/30"></textarea>
-      <button id="send" disabled class="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 rounded-xl text-sm font-medium">Send</button>
-      <button id="clear" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm">Clear</button>
+      <textarea id="input" rows="1" placeholder="Ask about citizenship, Concordat, Magisterium…" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm resize-none"></textarea>
+      <button id="send" disabled class="px-4 py-2 bg-violet-600 rounded-xl text-sm disabled:opacity-50">Send</button>
+      <button id="clear" class="px-3 py-2 bg-slate-800 rounded-xl text-sm">Clear</button>
     </div>
   </div>
-</main>
+</div>
 
 <script type="module">
 import { CreateMLCEngine } from "@mlc-ai/web-llm";
@@ -72,132 +76,61 @@ const useIndex = document.getElementById('use-index');
 const indexStatus = document.getElementById('index-status');
 const modelStatus = document.getElementById('model-status');
 const messagesEl = document.getElementById('messages');
-const chat = document.getElementById('chat');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const clearBtn = document.getElementById('clear');
 
 let engine = null;
 let forumIndex = [];
-const systemPrompt = "You are the TEP community assistant. Answer concisely. Use provided forum links when relevant.";
-let history = [{role:"system", content: systemPrompt}];
+let messages = [{role:"system", content:"You are the TEP assistant. Use forum data when provided and cite links."}];
 
-// 1. Load forum index (no CORS - same origin)
-fetch('./forum-index.json')
- .then(r => r.ok? r.json() : [])
- .then(data => {
-    forumIndex = Array.isArray(data)? data : [];
-    indexStatus.textContent = `Loaded ${forumIndex.length} topics`;
-  })
- .catch(() => {
-    indexStatus.textContent = 'No forum-index.json found';
-    useIndex.checked = false;
-    useIndex.disabled = true;
-  });
+// Load index
+fetch('./forum-index.json').then(r=>r.json()).then(d=>{ forumIndex=d; indexStatus.textContent=`Loaded ${d.length} topics`; }).catch(()=>{ indexStatus.textContent='No index'; useIndex.checked=false; useIndex.disabled=true; });
 
-function addMsg(role, text, sources=[]) {
-  const wrap = document.createElement('div');
-  wrap.className = 'flex ' + (role==='user'? 'justify-end' : 'justify-start');
-  const bubble = document.createElement('div');
-  bubble.className = 'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm border ' + (role==='user'? 'bg-indigo-600/20 border-indigo-500/30' : 'bg-slate-900 border-slate-800');
-
-  if (sources.length) {
-    const src = document.createElement('div');
-    src.className = 'mb-2 flex flex-wrap gap-1';
-    sources.forEach(s => {
-      const a = document.createElement('a');
-      a.href = s.url; a.target = '_blank';
-      a.className = 'text- bg-slate-800 px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-700';
-      a.textContent = s.title.slice(0,35);
-      src.appendChild(a);
-    });
-    bubble.appendChild(src);
+function addMsg(role, text, sources=[]){
+  const div=document.createElement('div');
+  div.className='p-3 rounded-xl border '+(role==='user'?'bg-indigo-900/20 border-indigo-800 ml-12':'bg-slate-900 border-slate-800 mr-12');
+  if(sources.length){
+    const s=document.createElement('div'); s.className='mb-2 text-xs space-y-1';
+    sources.forEach(x=>{ const a=document.createElement('a'); a.href=x.url; a.target='_blank'; a.className='block truncate text-violet-400 hover:underline'; a.textContent=x.title; s.appendChild(a); });
+    div.appendChild(s);
   }
-
-  const p = document.createElement('div');
-  p.className = 'whitespace-pre-wrap';
-  p.textContent = text;
-  bubble.appendChild(p);
-  wrap.appendChild(bubble);
-  messagesEl.appendChild(wrap);
-  chat.scrollTop = chat.scrollHeight;
-  return p;
+  div.appendChild(document.createTextNode(text));
+  messagesEl.appendChild(div); window.scrollTo(0,document.body.scrollHeight); return div;
 }
 
-function search(q) {
-  if (!forumIndex.length) return [];
-  const terms = q.toLowerCase().split(/\W+/).filter(t=>t.length>2);
-  return forumIndex.map(i => {
-    const txt = (i.title+' '+(i.excerpt||'')).toLowerCase();
-    let score = 0;
-    terms.forEach(t => { if(txt.includes(t)) score++; });
-    return {...i, score};
-  }).filter(i=>i.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+function search(q){
+  if(!forumIndex.length) return [];
+  const t=q.toLowerCase().split(/\W+/).filter(w=>w.length>2);
+  return forumIndex.map(i=>{ const txt=((i.title||'')+' '+(i.excerpt||'')).toLowerCase(); let s=0; t.forEach(w=>{if(txt.includes(w))s++}); return {...i,score:s}}).filter(i=>i.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
 }
 
-async function loadModel(id) {
-  if (engine) try { await engine.unload(); } catch {}
-  sendBtn.disabled = true;
-  modelStatus.textContent = 'Model: downloading…';
-  try {
-    engine = await CreateMLCEngine(id, {
-      initProgressCallback: p => {
-        modelStatus.textContent = `Model: ${p.text} ${Math.round(p.progress*100)}%`;
-      }
-    });
-    modelStatus.textContent = 'Model: ready';
-    sendBtn.disabled = false;
-  } catch(e) {
-    modelStatus.textContent = 'Model: error';
-    addMsg('assistant', 'Failed to load: '+e.message);
-  }
+async function init(id){
+  sendBtn.disabled=true; modelStatus.textContent='Model: loading…';
+  if(engine) try{await engine.unload()}catch{}
+  engine=await CreateMLCEngine(id,{initProgressCallback:p=>modelStatus.textContent=`Model: ${Math.round(p.progress*100)}%`});
+  modelStatus.textContent='Model: ready'; sendBtn.disabled=false;
 }
 
-async function send() {
-  const q = input.value.trim();
-  if (!q ||!engine) return;
-  input.value = '';
-  addMsg('user', q);
-
-  const sources = useIndex.checked? search(q) : [];
-  let prompt = q;
-  if (sources.length) {
-    prompt = `Question: ${q}\n\nRelevant TEP forum threads:\n${sources.map((s,i)=>`${i+1}. ${s.title} - ${s.url}`).join('\n')}\n\nAnswer using these when helpful.`;
-  }
-
-  history.push({role:'user', content: prompt});
-  const outEl = addMsg('assistant', '', sources);
-  sendBtn.disabled = true;
-
-  try {
-    const stream = await engine.chat.completions.create({
-      messages: history,
-      stream: true,
-      temperature: 0.3,
-      max_tokens: 700
-    });
-    let full = '';
-    for await (const chunk of stream) {
-      full += chunk.choices[0]?.delta?.content || '';
-      outEl.textContent = full;
-      chat.scrollTop = chat.scrollHeight;
-    }
-    history.push({role:'assistant', content: full});
-  } catch(e) {
-    outEl.textContent = 'Error: '+e.message;
-  } finally {
-    sendBtn.disabled = false;
-  }
+async function send(){
+  const q=input.value.trim(); if(!q) return; input.value=''; addMsg('user',q);
+  const src=useIndex.checked?search(q):[];
+  let prompt=q; if(src.length) prompt=`Question: ${q}\n\nForum results:\n${src.map(s=>s.title+' - '+s.url).join('\n')}`;
+  messages.push({role:'user',content:prompt});
+  const el=addMsg('assistant','',src); sendBtn.disabled=true;
+  try{
+    const stream=await engine.chat.completions.create({messages,stream:true,temperature:0.3});
+    let out=''; for await(const c of stream){ out+=c.choices[0].delta.content||''; el.lastChild.textContent=out; }
+    messages.push({role:'assistant',content:out});
+  }catch(e){ el.lastChild.textContent='Error: '+e.message }
+  sendBtn.disabled=false;
 }
 
-sendBtn.onclick = send;
-clearBtn.onclick = () => { history=[{role:"system",content:systemPrompt}]; messagesEl.innerHTML=''; addMsg('assistant','Cleared. Ask me about TEP!'); };
-input.onkeydown = e => { if(e.key==='Enter' &&!e.shiftKey){ e.preventDefault(); send(); } };
-modelSelect.onchange = () => loadModel(modelSelect.value);
-
-// start
-addMsg('assistant', 'Hello! I run entirely in your browser. Ask about citizenship, the Concordat, or anything TEP.');
-loadModel(modelSelect.value);
+sendBtn.onclick=send;
+clearBtn.onclick=()=>{messagesEl.innerHTML=''; messages=[messages[0]]};
+input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
+modelSelect.onchange=()=>init(modelSelect.value);
+init(modelSelect.value);
 </script>
 </body>
 </html>

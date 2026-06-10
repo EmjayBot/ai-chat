@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tep Worlds Community Chat</title>
+  <meta name="theme-color" content="#020617" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-teal-500/30 selection:text-teal-200">
+  <div class="relative min-h-screen flex flex-col">
+    <!-- Background -->
+    <div class="pointer-events-none fixed inset-0 -z-10">
+      <div class="absolute inset-0 bg-slate-950"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(800px_at_15%_-10%,rgba(56,189,248,0.18),transparent),radial-gradient(700px_at_85%_0%,rgba(20,184,166,0.14),transparent),radial-gradient(600px_at_50%_120%,rgba(99,102,241,0.12),transparent)]"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 border-b border-slate-800/60 glass bg-slate-950/70">
+      <div class="max-w-5xl mx-auto px-4 py-4 sm:py-5 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center shadow-lg shadow-teal-900/20 shrink-0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V5a2 2 0 0 1 2-2h10a4 4 0 0 1 4 4z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg sm:text-xl font-semibold tracking-tight truncate">Tep Worlds Community Chat</h1>
+            <p class="text-xs sm:text-sm text-slate-400 truncate">Free, private AI — no limits, no accounts, runs in your browser</p>
+          </div>
+        <div id="model-badge" class="hidden sm:flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="model-badge-text">Not loaded</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 w-full max-w-5xl mx-auto px-4 py-6 sm:py-8 flex flex-col gap-6">
+      <!-- Setup Card -->
+      <div id="setup-card" class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-2xl shadow-black/30">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-teal-500/5"></div>
+        <div class="relative p-5 sm:p-7">
+          <div class="flex flex-col lg:flex-row lg:items-end gap-5">
+            <div class="flex-1">
+              <label class="text-sm font-medium text-slate-200 mb-2 block">Choose a model</label>
+              <div class="relative">
+                <select id="model-select" class="w-full appearance-none bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 pr-10 text-[15px] focus:outline-none focus ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition">
+                  <option value="smollm">SmolLM2-360M — fastest, ~350MB</option>
+                  <option value="phi" selected>Phi-3.5-mini — recommended, ~2.3GB</option>
+                  <option value="llama">Llama-3.1-8B — most capable, ~4.7GB</option>
+                </select>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">Larger models are smarter but take longer to download. First load is cached.</p>
+            </div>
+            <div class="lg:w-[200px]">
+              <button id="load-btn" class="group relative w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 font-medium text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg class="group-disabled:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Load Model</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div id="progress-wrap" class="mt-6 hidden">
+            <div class="flex items-center justify-between mb-2">
+              <span id="status-text" class="text-sm text-slate-300">Initializing...</span>
+              <span id="progress-pct" class="text-xs font-mono text-slate-400">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+              <div id="progress-bar" class="h-full w-0 bg-gradient-to-r from-blue-600 to-teal-500 transition-all duration-200"></div>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Keep this tab open. Downloads are cached for next time.</p>
+          </div>
+
+          <!-- WebGPU Warning -->
+          <div id="gpu-warning" class="hidden mt-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-sm">
+            WebGPU is not available. Please use Chrome, Edge, or Brave on desktop. Mobile support is limited.
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Box -->
+      <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex gap-3">
+        <div class="shrink-0 mt-0.5">
+          <div class="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-slate-200">Why is this free?</p>
+          <p class="text-sm text-slate-400 mt-1 leading-relaxed">Unlike ChatGPT or Claude, this runs 100% on your device using WebGPU. No API keys, no monthly fees, no usage limits — your community can chat as much as they want.</p>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div id="chat-wrap" class="hidden flex-1 flex flex-col min-h-[60vh]">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span>Private • Runs locally</span>
+          </div>
+          <button id="clear-btn" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition">Clear chat</button>
+        </div>
+
+        <div id="messages" class="flex-1 overflow-y-auto custom-scroll space-y-4 p-1 pr-2 -mr-2 scroll-smooth"></div>
+      </div>
+    </main>
+
+    <!-- Input -->
+    <div class="sticky bottom-0 z-30 border-t border-slate-800/60 glass bg-slate-950/80">
+      <div class="max-w-5xl mx-auto px-4 py-3 sm:py-4">
+        <form id="input-form" class="relative flex items-end gap-2">
+          <div class="flex-1 relative">
+            <textarea id="user-input" rows="1" placeholder="Ask anything..." disabled class="w-full resize-none max-h-[160px] bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 pr-12 text-[15px] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 disabled:opacity-60 transition" ></textarea>
+            <div class="absolute right-2 bottom-2 flex gap-1">
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700/50">Enter ↵</span>
+            </div>
+          <button id="send-btn" type="submit" disabled class="h-[46px] px-4 sm:px-5 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 text-white font-medium shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-blue-900/40 transition active:scale-[0.98] flex items-center gap-2">
+            <span class="hidden sm:inline">Send</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </form>
+        <p class="text-[11px] text-slate-500 mt-2 text-center">Answers are generated locally. For best results, ask clear, factual questions.</p>
+      </div>
+    </div>
+
+    <footer class="border-t border-slate-900">
+      <div class="max-w-5xl mx-auto px-4 py-5 text-center text-xs text-slate-500">
+        Built for Tep Worlds • Private by design • Powered by WebLLM
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+    const SYSTEM_PROMPT = "You are a helpful community assistant. Provide clear, concise, factual answers to everyday questions. Help with explanations, how-tos, summaries, and general information. Do NOT engage in roleplay, fictional storytelling, worldbuilding, character creation, or creative writing exercises. If asked for those, politely decline and offer practical help instead. Keep responses brief and useful.";
+
+    const models = {
+      smollm: "SmolLM2-360M-Instruct-q4f16_1-MLC",
+      phi: "Phi-3.5-mini-instruct-q4f16_1-MLC",
+      llama: "Llama-3.1-8B-Instruct-q4f16_1-MLC"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const modelSelect = $("model-select");
+    const loadBtn = $("load-btn");
+    const progressWrap = $("progress-wrap");
+    const progressBar = $("progress-bar");
+    const progressPct = $("progress-pct");
+    const statusText = $("status-text");
+    const setupCard = $("setup-card");
+    const chatWrap = $("chat-wrap");
+    const messagesEl = $("messages");
+    const inputForm = $("input-form");
+    const userInput = $("user-input");
+    const sendBtn = $("send-btn");
+    const clearBtn = $("clear-btn");
+    const gpuWarning = $("gpu-warning");
+    const modelBadge = $("model-badge");
+    const modelBadgeText = $("model-badge-text");
+
+    let engine = null;
+    let messages = [{ role: "system", content: SYSTEM_PROMPT }];
+    let isGenerating = false;
+
+    // WebGPU check
+    if (!navigator.gpu) {
+      gpuWarning.classList.remove("hidden");
+      loadBtn.disabled = true;
+      loadBtn.innerHTML = '<span>WebGPU Not Available</span>';
+    }
+
+    function addMessage(role, text = "") {
+      const wrap = document.createElement("div");
+      wrap.className = `flex w-full ${role === "user" ? "justify-end" : "justify-start"}`;
+      
+      const bubble = document.createElement("div");
+      bubble.className = `${role === "user" 
+        ? "bg-gradient-to-br from-blue-600 to-teal-500 text-white rounded-br-sm shadow-lg shadow-blue-900/20" 
+        : "bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-bl-sm"} max-w-[90%] sm:max-w-[78%] px-4 py-3 rounded-2xl`;
+      
+      const content = document.createElement("div");
+      content.className = "whitespace-pre-wrap break-words text-[15px] leading-[1.6]";
+      content.textContent = text;
+      
+      bubble.appendChild(content);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return content;
+    }
+
+    function setGenerating(state) {
+      isGenerating = state;
+      sendBtn.disabled = state || !engine;
+      userInput.disabled = state || !engine;
+      if (!state) userInput.focus();
+    }
+
+    async function loadModel() {
+      const key = modelSelect.value;
+      const modelId = models[key];
+      
+      loadBtn.disabled = true;
+      progressWrap.classList.remove("hidden");
+      statusText.textContent = "Checking WebGPU...";
+      progressBar.style.width = "5%";
+      progressPct.textContent = "5%";
+
+      try {
+        const initProgressCallback = (report) => {
+          const pct = Math.max(1, Math.floor(report.progress * 100));
+          progressBar.style.width = pct + "%";
+          progressPct.textContent = pct + "%";
+          statusText.textContent = report.text || "Downloading model...";
+        };
+
+        engine = await webllm.CreateMLCEngine(modelId, {
+          initProgressCallback,
+          logLevel: "WARN",
+        });
+
+        statusText.textContent = "Ready!";
+        progressBar.style.width = "100%";
+        progressPct.textContent = "100%";
+        
+        setTimeout(() => {
+          setupCard.classList.add("hidden");
+          chatWrap.classList.remove("hidden");
+          modelBadge.classList.remove("hidden");
+          modelBadgeText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split(" — ")[0];
+          setGenerating(false);
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          
+          messages = [{ role: "system", content: SYSTEM_PROMPT }];
+          messagesEl.innerHTML = "";
+          addMessage("assistant", "Model loaded. Ask me anything—I'll keep it clear and concise.");
+          userInput.focus();
+        }, 400);
+
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = "Failed to load: " + (err.message || err);
+        statusText.className = "text-sm text-red-400";
+        loadBtn.disabled = false;
+        progressWrap.classList.add("hidden");
+      }
+    }
+
+    async function handleSend(e) {
+      e?.preventDefault();
+      if (isGenerating || !engine) return;
+      
+      const text = userInput.value.trim();
+      if (!text) return;
+      
+      userInput.value = "";
+      userInput.style.height = "auto";
+      addMessage("user", text);
+      messages.push({ role: "user", content: text });
+      
+      setGenerating(true);
+      const assistantEl = addMessage("assistant", "");
+      
+      try {
+        const stream = await engine.chat.completions.create({
+          messages,
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 800,
+        });
+
+        let fullText = "";
+        for await (const chunk of stream) {
+          const delta = chunk.choices?.[0]?.delta?.content || "";
+          if (delta) {
+            fullText += delta;
+            assistantEl.textContent = fullText;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+        }
+        
+        messages.push({ role: "assistant", content: fullText });
+      } catch (err) {
+        assistantEl.textContent = "Sorry, I ran into an error. Please try again.";
+        console.error(err);
+      } finally {
+        setGenerating(false);
+      }
+    }
+
+    loadBtn.addEventListener("click", loadModel);
+    inputForm.addEventListener("submit", handleSend);
+    
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+    
+    userInput.addEventListener("input", () => {
+      userInput.style.height = "auto";
+      userInput.style.height = Math.min(userInput.scrollHeight, 160) + "px";
+    });
+
+    clearBtn.addEventListener("click", () => {
+      messages = [{ role: "system", content: SYSTEM_PROMPT }];
+      messagesEl.innerHTML = "";
+      addMessage("assistant", "Chat cleared. What would you like to know?");
+    });
+
+    // Auto-select recommended on mobile to save data
+    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      modelSelect.value = "smollm";
+    }
+  </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>

@@ -1,136 +1,131 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TEP Community Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-<script type="importmap">
-{
-  "imports": {
-    "@mlc-ai/web-llm": "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm"
-  }
-}
-</script>
-<style>
-  :root { color-scheme: dark; }
-    * { scrollbar-width: thin; }
- .glass { backdrop-filter: blur(12px); }
-</style>
+<script type="importmap">{"imports":{"@mlc-ai/web-llm":"https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm"}}</script>
 </head>
-<body class="bg-[#030712] text-slate-200">
-<div class="min-h-screen flex flex-col">
-  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 glass">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center font-black">TEP</div>
-        <div>
-          <h1 class="text-lg font-semibold">TEP Community Assistant</h1>
-          <p class="text-xs text-slate-400 -mt-1">Local AI + forum search</p>
-        </div>
-      <div class="flex items-center gap-3">
-        <!-- MODEL SELECTOR -->
-        <div class="flex items-center gap-1.5">
-          <label class="text-xs text-slate-400">Model</label>
-          <select id="model" class="bg-slate-900 border border-slate-700 rounded-lg text-xs px-2 py-1.5">
-            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini (default)</option>
-            <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">Phi-3 Mini 4K</option>
-            <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B</option>
-            <option value="Gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B</option>
-          </select>
-        </div>
-        <!-- FORUM SEARCH CHECKBOX -->
-        <label class="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5 cursor-pointer">
-          <input id="use-index" type="checkbox" checked class="w-3.5 h-3.5 accent-violet-500" />
-          <span class="text-xs">Search forum.theeastpacific.com</span>
-        </label>
-      </div>
-    </div>
-    <div class="border-t border-slate-900">
-      <div class="max-w-6xl mx-auto px-4 py-1.5 flex justify-between text-[11px] text-slate-500">
-        <div id="index-status">Checking forum index…</div>
-        <div id="model-status">Model: idle</div>
-      </div>
-    </div>
-  </header>
-
-  <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
-    <div id="messages" class="space-y-4"></div>
-  </main>
-
-  <div class="sticky bottom-0 bg-[#030712] border-t border-slate-900 px-4 py-3">
-    <div class="max-w-3xl mx-auto flex gap-2">
-      <textarea id="input" rows="1" placeholder="Ask about citizenship, Concordat, Magisterium…" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm resize-none"></textarea>
-      <button id="send" disabled class="px-4 py-2 bg-violet-600 rounded-xl text-sm disabled:opacity-50">Send</button>
-      <button id="clear" class="px-3 py-2 bg-slate-800 rounded-xl text-sm">Clear</button>
-    </div>
+<body class="bg-[#030712] text-slate-200 min-h-screen">
+<header class="sticky top-0 bg-slate-950/90 border-b border-slate-800 p-3">
+ <div class="max-w-5xl mx-auto flex justify-between items-center">
+  <h1 class="font-bold">TEP Assistant</h1>
+  <div class="flex gap-3 items-center text-xs">
+   <select id="model" class="bg-slate-900 border border-slate-700 rounded px-2 py-1">
+    <option>Phi-3.5-mini-instruct-q4f16_1-MLC</option>
+   </select>
+   <label class="flex items-center gap-1"><input id="use-index" type="checkbox" checked> Search forum</label>
   </div>
-</div>
+ </div>
+ <div class="max-w-5xl mx-auto flex justify-between text-[11px] text-slate-500 mt-1">
+  <span id="index-status">Loading…</span><span id="model-status">Model: idle</span>
+ </div>
+</header>
+
+<main class="max-w-3xl mx-auto p-4 flex flex-col h-[calc(100vh-120px)]">
+ <div id="messages" class="flex-1 overflow-y-auto space-y-3 mb-3"></div>
+ <div class="flex gap-2">
+  <input id="input" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm" placeholder="Ask about citizenship…">
+  <button id="send" disabled class="px-4 py-2 bg-violet-600 rounded-lg text-sm disabled:opacity-50">Send</button>
+ </div>
+</main>
 
 <script type="module">
 import { CreateMLCEngine } from "@mlc-ai/web-llm";
 
 const modelSelect = document.getElementById('model');
 const useIndex = document.getElementById('use-index');
-const indexStatus = document.getElementById('index-status');
-const modelStatus = document.getElementById('model-status');
-const messagesEl = document.getElementById('messages');
+const idxStatus = document.getElementById('index-status');
+const mdlStatus = document.getElementById('model-status');
+const msgs = document.getElementById('messages');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
-const clearBtn = document.getElementById('clear');
 
 let engine = null;
-let forumIndex = [];
-let messages = [{role:"system", content:"You are the TEP assistant. Use forum data when provided and cite links."}];
+let forum = [];
+let history = [{role:'system', content:'You are TEP assistant. Be concise.'}];
 
-// Load index
-fetch('./forum-index.json').then(r=>r.json()).then(d=>{ forumIndex=d; indexStatus.textContent=`Loaded ${d.length} topics`; }).catch(()=>{ indexStatus.textContent='No index'; useIndex.checked=false; useIndex.disabled=true; });
-
-function addMsg(role, text, sources=[]){
-  const div=document.createElement('div');
-  div.className='p-3 rounded-xl border '+(role==='user'?'bg-indigo-900/20 border-indigo-800 ml-12':'bg-slate-900 border-slate-800 mr-12');
-  if(sources.length){
-    const s=document.createElement('div'); s.className='mb-2 text-xs space-y-1';
-    sources.forEach(x=>{ const a=document.createElement('a'); a.href=x.url; a.target='_blank'; a.className='block truncate text-violet-400 hover:underline'; a.textContent=x.title; s.appendChild(a); });
-    div.appendChild(s);
+// --- YOUR 3 CUSTOM RESPONSES ---
+const FAQS = [
+  {
+    keys:['citizen','citizenship','become a citizen','how to join'],
+    answer:`CITIZENSHIP\n\n1. Move WA nation to TEP\n2. Apply: https://forum.theeastpacific.com/t/citizenship-application\n3. Take oath in thread\n4. Wait for Magister approval`
+  },
+  {
+    keys:['amendment','citizenship act','public official disclosure','poda'],
+    answer:`AMENDMENTS TO CITIZENSHIP ACT & PODA\n\nCurrent texts:\n• Citizenship Act: https://forum.theeastpacific.com/t/citizenship-act\n• PODA: https://forum.theeastpacific.com/t/public-official-disclosure-act\n\nCheck Magisterium voting hall for pending amendments.`
+  },
+  {
+    keys:['application','roster','citizenship applications','citizenship roster'],
+    answer:`APPLICATIONS & ROSTER\n\n• Apply here: https://forum.theeastpacific.com/t/citizenship-application\n• View roster: https://forum.theeastpacific.com/t/citizenship-roster`
   }
-  div.appendChild(document.createTextNode(text));
-  messagesEl.appendChild(div); window.scrollTo(0,document.body.scrollHeight); return div;
+];
+
+function checkFAQ(q){
+  const l = q.toLowerCase();
+  return FAQS.find(f => f.keys.some(k => l.includes(k)));
+}
+// --- END CUSTOM ---
+
+fetch('./forum-index.json').then(r=>r.json()).then(d=>{forum=d; idxStatus.textContent=`Loaded ${d.length} topics`}).catch(()=>idxStatus.textContent='No index');
+
+function add(role,text){
+  const d=document.createElement('div');
+  d.className='p-2.5 rounded-lg text-sm '+(role==='user'?'bg-indigo-900/30 ml-10':'bg-slate-800 mr-10');
+  d.textContent=text;
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
 }
 
 function search(q){
-  if(!forumIndex.length) return [];
   const t=q.toLowerCase().split(/\W+/).filter(w=>w.length>2);
-  return forumIndex.map(i=>{ const txt=((i.title||'')+' '+(i.excerpt||'')).toLowerCase(); let s=0; t.forEach(w=>{if(txt.includes(w))s++}); return {...i,score:s}}).filter(i=>i.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+  return forum.map(f=>{const txt=(f.title+' '+f.excerpt).toLowerCase(); let s=0; t.forEach(w=>{if(txt.includes(w))s++}); return {...f,score:s}}).filter(f=>f.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
 }
 
-async function init(id){
-  sendBtn.disabled=true; modelStatus.textContent='Model: loading…';
-  if(engine) try{await engine.unload()}catch{}
-  engine=await CreateMLCEngine(id,{initProgressCallback:p=>modelStatus.textContent=`Model: ${Math.round(p.progress*100)}%`});
-  modelStatus.textContent='Model: ready'; sendBtn.disabled=false;
+async function init(){
+  mdlStatus.textContent='Downloading…';
+  sendBtn.disabled=true;
+  engine = await CreateMLCEngine(modelSelect.value,{initProgressCallback:p=>mdlStatus.textContent=`${Math.round(p.progress*100)}%`});
+  mdlStatus.textContent='Ready'; sendBtn.disabled=false;
 }
 
 async function send(){
-  const q=input.value.trim(); if(!q) return; input.value=''; addMsg('user',q);
-  const src=useIndex.checked?search(q):[];
-  let prompt=q; if(src.length) prompt=`Question: ${q}\n\nForum results:\n${src.map(s=>s.title+' - '+s.url).join('\n')}`;
-  messages.push({role:'user',content:prompt});
-  const el=addMsg('assistant','',src); sendBtn.disabled=true;
-  try{
-    const stream=await engine.chat.completions.create({messages,stream:true,temperature:0.3});
-    let out=''; for await(const c of stream){ out+=c.choices[0].delta.content||''; el.lastChild.textContent=out; }
-    messages.push({role:'assistant',content:out});
-  }catch(e){ el.lastChild.textContent='Error: '+e.message }
-  sendBtn.disabled=false;
+  const q=input.value.trim(); if(!q) return; input.value='';
+
+  // 1. CHECK CUSTOM FIRST
+  const faq = checkFAQ(q);
+  if(faq){
+    add('user',q);
+    add('assistant',faq.answer);
+    // also show forum links if enabled
+    if(useIndex.checked){
+      const hits=search(q);
+      if(hits.length) add('assistant','Related: '+hits.map(h=>h.title).join(' | '));
+    }
+    return;
+  }
+
+  // 2. GUARD FOR MODEL
+  if(!engine){ add('user',q); add('assistant','Model still loading – wait for "Ready"'); return; }
+
+  add('user',q);
+  const src = useIndex.checked?search(q):[];
+  let prompt = q;
+  if(src.length) prompt += '\n\nContext:\n'+src.map(s=>s.title+' - '+s.url).join('\n');
+  history.push({role:'user',content:prompt});
+
+  const out = document.createElement('div');
+  out.className='p-2.5 rounded-lg bg-slate-800 mr-10 text-sm'; msgs.appendChild(out);
+
+  const stream = await engine.chat.completions.create({messages:history,stream:true});
+  let txt=''; for await(const c of stream){ txt+=c.choices[0].delta.content||''; out.textContent=txt; }
+  history.push({role:'assistant',content:txt});
 }
 
 sendBtn.onclick=send;
-clearBtn.onclick=()=>{messagesEl.innerHTML=''; messages=[messages[0]]};
-input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
-modelSelect.onchange=()=>init(modelSelect.value);
-init(modelSelect.value);
+input.onkeydown=e=>{if(e.key==='Enter'){send()}};
+init();
+add('assistant','Try: "citizenship" or "amendments to citizenship act" – you’ll get instant answers.');
 </script>
 </body>
 </html>

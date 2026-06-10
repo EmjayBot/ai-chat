@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TEP Community Chat</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 8px; }
+  .prose a { text-decoration: underline; text-underline-offset: 2px; }
+</style>
+</head>
+<body class="bg-[#050816] text-slate-100 antialiased">
+<div class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#050816]/70 border-b border-white/10">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-9 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-violet-900/30">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="text-white">
+            <path d="M12 3c4.5 0 8 3 8 7 0 2.3-1.2 4.3-3 5.6V21l-4-2.5c-.4.1-.9.1-1.3.1-4.5 0-8-3-8-7s3.5-7 8-7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight">TEP Community Chat</h1>
+          <p class="text-xs text-slate-400 -mt-0.5">Free AI + live forum search</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <label class="text-xs text-slate-400">Model</label>
+        <select id="model" class="bg-[#0d1324] border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/50">
+          <option value="SmolLM2-360M-Instruct-q4f16_1-MLC">SmolLM2-360M (fastest)</option>
+          <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5-mini (default)</option>
+          <option value="Llama-3.1-8B-Instruct-q4f32_1-MLC">Llama-3.1-8B (best)</option>
+        </select>
+        <label class="ml-2 flex items-center gap-2 text-xs bg-[#0d1324] border border-white/10 rounded-xl px-3 py-2 cursor-pointer hover:bg-white/5">
+          <input id="searchToggle" type="checkbox" class="accent-violet-500" checked>
+          <span>Search forum.theeastpacific.com</span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Setup -->
+  <div class="max-w-5xl mx-auto w-full px-4 pt-4">
+    <details id="adminPanel" class="group bg-gradient-to-b from-[#0d1324]/80 to-[#0b1020]/60 border border-amber-500/20 rounded-2xl overflow-hidden">
+      <summary class="list-none cursor-pointer px-4 py-3 flex items-center justify-between hover:bg-white/5">
+        <div class="flex items-center gap-2.5">
+          <span class="size-6 rounded-lg bg-amber-500/15 text-amber-300 grid place-items-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9l-7 12A2 2 0 0 0 5 19h14a2 2 0 0 0 1.7-3.1l-7-12a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <span class="text-sm font-medium">Admin Setup: Enable CORS for live forum search</span>
+        </div>
+        <span class="text-xs text-slate-400 group-open:rotate-180 transition">▼</span>
+      </summary>
+      <div class="px-4 pb-4 pt-1 text-sm text-slate-300 space-y-3 border-t border-white/5">
+        <p>To allow this page to fetch search results directly from your Discourse:</p>
+        <ol class="list-decimal ml-5 space-y-1.5 mono text-[12px]">
+          <li>Discourse Admin → Settings → Security</li>
+          <li>Find <b>cors_origins</b> → add your GitHub Pages URL (e.g., <code>https://yourname.github.io</code>)</li>
+          <li>(Optional) Enable <b>cors enabled</b> if present</li>
+          <li>Save. No server code needed.</li>
+        </ol>
+        <p class="text-xs text-slate-400">Without CORS, the chat still works—but live search will show "Enable CORS in Discourse admin".</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Chat -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6 flex flex-col">
+    <div id="chat" class="flex-1 overflow-y-auto space-y-5 pb-6 scroll-smooth"></div>
+
+    <!-- Status -->
+    <div id="statusBar" class="h-6 -mt-2 mb-2 px-1 text-xs text-slate-400 flex items-center gap-2">
+      <span id="status" class="truncate"></span>
+    </div>
+
+    <!-- Composer -->
+    <div class="sticky bottom-0 bg-gradient-to-t from-[#050816] via-[#050816]/95 to-transparent pt-2">
+      <div class="bg-[#0b1122]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/30">
+        <textarea id="input" rows="1" placeholder="Ask about TEP laws, guides, or anything..." class="w-full bg-transparent resize-none outline-none px-4 pt-3 pb-1 text-[15px] leading-6 placeholder-slate-500 max-h-40"></textarea>
+        <div class="flex items-center justify-between px-3 pb-3 pt-1">
+          <div class="text-[11px] text-slate-500">Enter to send • Shift+Enter for newline</div>
+          <div class="flex items-center gap-2">
+            <button id="clear" class="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10">Clear</button>
+            <button id="send" disabled class="text-sm font-medium px-4 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5">
+              <span>Send</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h12M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <footer class="text-center text-[11px] text-slate-500 py-3">
+        Private AI • Forum data from TEP • Powered by WebLLM
+      </footer>
+    </div>
+  </main>
+</div>
+
+<!-- Loading overlay -->
+<div id="loader" class="fixed inset-0 z-50 bg-[#050816]/95 backdrop-blur-xl flex items-center justify-center">
+  <div class="w-[92vw] max-w-sm bg-[#0b1122] border border-white/10 rounded-2xl p-6 shadow-2xl">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="size-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 animate-pulse"></div>
+      <div>
+        <div class="font-semibold">Loading AI model</div>
+        <div class="text-xs text-slate-400">Runs entirely in your browser</div>
+      </div>
+    </div>
+    <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+      <div id="progBar" class="h-full w-0 bg-violet-500 transition-all"></div>
+    </div>
+    <div id="progText" class="mt-2 text-xs mono text-slate-400">Initializing…</div>
+    <div class="mt-4 text-[11px] text-slate-500">First load downloads ~200–800 MB depending on model. Phi-3.5-mini is recommended.</div>
+  </div>
+</div>
+
+<script type="module">
+import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+import { marked } from "https://esm.run/marked";
+
+const chatEl = document.getElementById('chat');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const clearBtn = document.getElementById('clear');
+const modelSel = document.getElementById('model');
+const searchToggle = document.getElementById('searchToggle');
+const statusEl = document.getElementById('status');
+const loader = document.getElementById('loader');
+const progBar = document.getElementById('progBar');
+const progText = document.getElementById('progText');
+const adminPanel = document.getElementById('adminPanel');
+
+let engine = null;
+let messages = [];
+let isGenerating = false;
+const baseSystem = `You are a helpful assistant for The East Pacific community. Answer clearly and concisely. Use provided forum results when relevant, and include links. Do NOT do roleplay or creative writing.`;
+
+function autoResize(){ inputEl.style.height='auto'; inputEl.style.height=Math.min(inputEl.scrollHeight, 160)+'px'; }
+inputEl.addEventListener('input', autoResize);
+
+function addBubble(role, html='') {
+  const wrap = document.createElement('div');
+  wrap.className = `flex gap-3 ${role==='user'?'justify-end':''}`;
+  const bubble = document.createElement('div');
+  bubble.className = `max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-[14.5px] leading-6 border ${role==='user'
+    ? 'bg-violet-600/20 border-violet-500/30 ml-auto'
+    : 'bg-[#0f172a]/80 border-white/10'}`;
+  if (role==='assistant') bubble.classList.add('prose','prose-invert','prose-p:my-2','prose-a:text-cyan-300','max-w-none');
+  bubble.innerHTML = html;
+  if (role==='assistant') {
+    const avatar = document.createElement('div');
+    avatar.className = 'size-8 rounded-xl bg-[#0d1324] border border-white/10 grid place-items-center shrink-0 mt-1';
+    avatar.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-cyan-300"><path d="M12 3c4.5 0 8 3 8 7 0 2.3-1.2 4.3-3 5.6V21l-4-2.5c-.4.1-.9.1-1.3.1-4.5 0-8-3-8-7s3.5-7 8-7Z" stroke="currentColor" stroke-width="1.5"/></svg>`;
+    wrap.appendChild(avatar);
+  }
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return bubble;
+}
+
+function addMessage(role, content) {
+  const safe = role==='user' ? content.replace(/</g,'&lt;') : marked.parse(content);
+  return addBubble(role, safe);
+}
+
+async function searchForum(query) {
+  statusEl.textContent = 'Searching forum…';
+  try {
+    const url = `https://forum.theeastpacific.com/search.json?q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { credentials: 'omit' });
+    if (!res.ok) throw new Error('http '+res.status);
+    const data = await res.json();
+    const topics = (data.topics || []).slice(0,3);
+    if (!topics.length) {
+      statusEl.textContent = 'No forum matches';
+      setTimeout(()=>statusEl.textContent='', 1800);
+      return '';
+    }
+    const links = topics.map(t => `- [${t.title}](https://forum.theeastpacific.com/t/${t.slug}/${t.id})`).join('\n');
+    statusEl.textContent = `Found ${topics.length} forum topics`;
+    setTimeout(()=>statusEl.textContent='', 2200);
+    adminPanel.open = false;
+    return `LIVE FORUM RESULTS for "${query}":\n${links}\n\nUse these if relevant and ALWAYS include the links in your answer when you reference them.`;
+  } catch (e) {
+    console.warn('Forum search failed', e);
+    statusEl.innerHTML = `<span class="text-amber-300">Enable CORS in Discourse admin</span> <span class="text-slate-500">— see panel above</span>`;
+    adminPanel.open = true;
+    return '';
+  }
+}
+
+async function initEngine(modelId) {
+  sendBtn.disabled = true;
+  loader.classList.remove('hidden');
+  progBar.style.width = '0%';
+  progText.textContent = 'Downloading model…';
+  if (engine) { try { await engine.unload(); } catch {} }
+  engine = await CreateMLCEngine(modelId, {
+    initProgressCallback: (p) => {
+      const pct = Math.round((p.progress || 0)*100);
+      progBar.style.width = pct + '%';
+      progText.textContent = `${p.text || 'Loading'} ${pct? pct+'%':''}`;
+    }
+  });
+  loader.classList.add('hidden');
+  sendBtn.disabled = false;
+  statusEl.textContent = `Ready: ${modelSel.options[modelSel.selectedIndex].text}`;
+  setTimeout(()=>{ if(statusEl.textContent.startsWith('Ready')) statusEl.textContent=''; }, 2500);
+}
+
+async function handleSend() {
+  if (isGenerating) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value=''; autoResize();
+  addMessage('user', text);
+  messages.push({role:'user', content:text});
+
+  isGenerating = true; sendBtn.disabled = true;
+
+  let forumContext = '';
+  if (searchToggle.checked) {
+    forumContext = await searchForum(text);
+  }
+
+  const systemPrompt = baseSystem + (forumContext ? '\n\n' + forumContext : '');
+  const allMessages = [{role:'system', content: systemPrompt}, ...messages.slice(-10)];
+
+  const assistantBubble = addBubble('assistant', '<span class="opacity-60">Thinking…</span>');
+  let full = '';
+  try {
+    const stream = await engine.chat.completions.create({
+      messages: allMessages,
+      temperature: 0.6,
+      max_tokens: 900,
+      stream: true,
+    });
+    assistantBubble.innerHTML = '';
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content || '';
+      full += delta;
+      assistantBubble.innerText = full; // stream as plain for speed
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+    // final render with markdown
+    assistantBubble.innerHTML = marked.parse(full || '…');
+    messages.push({role:'assistant', content: full});
+  } catch (err) {
+    console.error(err);
+    assistantBubble.innerHTML = `<span class="text-red-300">Error: ${String(err.message||err).slice(0,200)}</span>`;
+  } finally {
+    isGenerating = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+sendBtn.addEventListener('click', handleSend);
+inputEl.addEventListener('keydown', (e)=>{
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+clearBtn.addEventListener('click', ()=>{
+  messages = [];
+  chatEl.innerHTML = '';
+  addMessage('assistant', 'Cleared. Ask me anything about The East Pacific — I can search the forum live.');
+});
+modelSel.addEventListener('change', ()=> initEngine(modelSel.value));
+
+// Initial greeting
+addMessage('assistant', "Hello! I'm your TEP community assistant. I run **privately in your browser** and can search **forum.theeastpacific.com** live.\n\nTry: \"What are the current laws?\" or \"How do I become a citizen?\"");
+
+// Boot
+initEngine(modelSel.value);
+setTimeout(autoResize, 50);
+</script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>

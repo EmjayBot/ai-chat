@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TEP Community Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@mlc-ai/web-llm": "https://esm.sh/@mlc-ai/web-llm@0.2.79"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+ .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+</style>
+</head>
+<body class="bg-[#030712] text-slate-200 antialiased selection:bg-violet-500/30 selection:text-violet-100">
+<div class="min-h-screen flex flex-col">
+  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 glass">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-900/30 shrink-0">
+            <span class="font-black text-white text- tracking-wider">TEP</span>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text- sm:text- font-semibold tracking-tight leading-tight">TEP Community Assistant</h1>
+            <p class="text- text-slate-400 -mt-0.5 hidden sm:block">Local AI for forum.theeastpacific.com</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+          <div class="flex items-center gap-1.5">
+            <label for="model" class="text- text-slate-400 hidden sm:block">Model</label>
+            <select id="model" class="bg-slate-900/80 border border-slate-700 rounded-lg text-xs px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition">
+              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini (default)</option>
+              <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">Phi-3 Mini 4K</option>
+              <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B</option>
+              <option value="Gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B</option>
+              <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">Qwen2.5 1.5B</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-slate-900 transition">
+            <input id="use-index" type="checkbox" checked class="w-3.5 h-3.5 accent-violet-500 bg-slate-800 border-slate-600 rounded" />
+            <span class="text- sm:text-xs text-slate-300 leading-tight">Search forum.theeastpacific.com (local index)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-slate-900/80">
+      <div class="max-w-6xl mx-auto px-4 py-1.5 flex items-center justify-between text- text-slate-500">
+        <div id="index-status" class="truncate">Checking forum index…</div>
+        <div id="model-status" class="shrink-0">Model: idle</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col max-w-6xl w-full mx-auto">
+    <div id="chat" class="flex-1 overflow-y-auto px-4 py-6">
+      <div class="max-w-3xl mx-auto space-y-5" id="messages"></div>
+    </div>
+
+    <div class="sticky bottom-0 z-30">
+      <div class="h-6 bg-gradient-to-t from-[#030712] to-transparent pointer-events-none"></div>
+      <div class="bg-[#030712]/95 border-t border-slate-900 px-4 pb-4 pt-2">
+        <div class="max-w-3xl mx-auto">
+          <div class="relative bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-black/30 focus-within:border-violet-500/50 focus-within:ring-2 focus-within:ring-violet-500/20 transition">
+            <textarea id="input" rows="1" placeholder="Ask about TEP laws, culture, government, or history…" class="w-full bg-transparent resize-none outline-none px-4 py-3 pr- text- leading-6 placeholder-slate-500 max-h-"></textarea>
+            <div class="absolute right-2 bottom-2 flex items-center gap-1.5">
+              <button id="clear" class="px-2.5 py-1.5 text- rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">Clear</button>
+              <button id="send" disabled class="px-3 py-1.5 text- font-medium rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-lg shadow-violet-900/30 transition flex items-center gap-1">
+                <span>Send</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
+          </div>
+          <p class="text- text-slate-500 mt-2 text-center">Runs fully in your browser. No data leaves your device except model files from WebLLM CDN.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const modelSelect = document.getElementById('model');
+const useIndex = document.getElementById('use-index');
+const indexStatus = document.getElementById('index-status');
+const modelStatus = document.getElementById('model-status');
+const messagesEl = document.getElementById('messages');
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const clearBtn = document.getElementById('clear');
+
+let engine = null;
+let generating = false;
+let forumIndex = [];
+
+const systemPrompt = "You are the TEP community assistant. Answer concisely using forum data when provided. Cite links.";
+
+let messages = [{ role: "system", content: systemPrompt }];
+
+// Load forum index
+fetch('./forum-index.json', { cache: 'no-store' })
+ .then(r => { if (!r.ok) throw new Error('no index'); return r.json(); })
+ .then(data => {
+    forumIndex = Array.isArray(data)? data : (data.topics || data.items || []);
+    indexStatus.textContent = `Loaded ${forumIndex.length} topics`;
+  })
+ .catch(() => {
+    forumIndex = [];
+    indexStatus.textContent = 'No index found';
+    useIndex.checked = false;
+    useIndex.disabled = true;
+    useIndex.parentElement.classList.add('opacity-50');
+  });
+
+function searchIndex(query) {
+  if (!forumIndex.length ||!query) return [];
+  const terms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
+  const q = query.toLowerCase();
+  const scored = forumIndex.map(item => {
+    const title = (item.title || '').toLowerCase();
+    const excerpt = (item.excerpt || item.body || item.text || '').toLowerCase();
+    const text = title + ' ' + excerpt;
+    let score = 0;
+    terms.forEach(t => {
+      if (text.includes(t)) score += (t.length > 4? 2 : 1);
+    });
+    if (title.includes(q)) score += 5;
+    if (excerpt.includes(q)) score += 2;
+    return {...item, score };
+  }).filter(i => i.score > 0);
+  scored.sort((a,b) => b.score - a.score);
+  return scored.slice(0,3).map(s => ({
+    title: s.title || 'Untitled',
+    url: s.url || s.link || `https://forum.theeastpacific.com`,
+    excerpt: (s.excerpt || s.body || '').slice(0, 180)
+  }));
+}
+
+function addMessage(role, text, sources = []) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex gap-3 ' + (role === 'user'? 'justify-end' : 'justify-start');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'max-w-[88%] sm:max-w-[80%] rounded-2xl px-4 py-3 border shadow-sm ' +
+    (role === 'user'
+     ? 'bg-indigo-600/15 border-indigo-500/30 ml-8'
+      : 'bg-slate-900/80 border-slate-800 mr-8');
+
+  if (role === 'assistant' && sources.length) {
+    const srcWrap = document.createElement('div');
+    srcWrap.className = 'mb-2.5 flex flex-wrap gap-1.5';
+    const label = document.createElement('span');
+    label.className = 'text- uppercase tracking-wider text-slate-500 w-full mb-0.5';
+    label.textContent = 'Forum matches';
+    srcWrap.appendChild(label);
+    sources.forEach(s => {
+      const a = document.createElement('a');
+      a.href = s.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'group text- px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition max-w- truncate';
+      a.title = s.title;
+      a.innerHTML = `<span class="group-hover:text-violet-300 transition">${s.title}</span>`;
+      srcWrap.appendChild(a);
+    });
+    bubble.appendChild(srcWrap);
+  }
+
+  const content = document.createElement('div');
+  content.className = 'content whitespace-pre-wrap text- leading-[1.6] text-slate-100';
+  content.textContent = text;
+  bubble.appendChild(content);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return content;
+}
+
+function updateAssistant(el, text) {
+  el.textContent = text;
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function setGenerating(v) {
+  generating = v;
+  sendBtn.disabled = v ||!engine;
+  input.disabled = v;
+  sendBtn.classList.toggle('opacity-50', sendBtn.disabled);
+}
+
+async function initModel(id) {
+  if (engine) {
+    try { await engine.unload(); } catch {}
+    engine = null;
+  }
+  setGenerating(true);
+  modelStatus.textContent = 'Model: downloading…';
+  try {
+    engine = await CreateMLCEngine(id, {
+      initProgressCallback: (p) => {
+        const pct = Math.round((p.progress || 0) * 100);
+        modelStatus.textContent = `Model: ${p.text || 'loading'} ${pct? pct+'%' : ''}`;
+      }
+    });
+    modelStatus.textContent = 'Model: ready';
+  } catch (e) {
+    modelStatus.textContent = 'Model: error';
+    console.error(e);
+    addMessage('assistant', 'Failed to load model: ' + e.message);
+    engine = null;
+  } finally {
+    setGenerating(false);
+  }
+}
+
+async function handleSend() {
+  const text = input.value.trim();
+  if (!text || generating) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', text);
+
+  let sources = [];
+  if (useIndex.checked && forumIndex.length) {
+    sources = searchIndex(text);
+  }
+
+  let contextual = text;
+  if (sources.length) {
+    const ctx = sources.map((s,i) => `${i+1}. ${s.title}\n${s.url}\n${s.excerpt}`).join('\n\n');
+    contextual = `Question: ${text}\n\nRelevant forum results from forum.theeastpacific.com:\n${ctx}\n\nAnswer using the forum data when helpful. Always cite links inline.`;
+  }
+
+  messages.push({ role: 'user', content: contextual });
+  const contentEl = addMessage('assistant', '', sources);
+
+  setGenerating(true);
+
+  try {
+    if (!engine) await initModel(modelSelect.value);
+    if (!engine) throw new Error('Model not loaded');
+
+    const stream = await engine.chat.completions.create({
+      messages,
+      temperature: 0.3,
+      top_p: 0.9,
+      max_tokens: 800,
+      stream: true
+    });
+
+    let full = '';
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content || '';
+      full += delta;
+      updateAssistant(contentEl, full);
+    }
+    messages.push({ role: 'assistant', content: full });
+  } catch (err) {
+    updateAssistant(contentEl, 'Error: ' + (err?.message || String(err)));
+  } finally {
+    setGenerating(false);
+    input.focus();
+  }
+}
+
+// Events
+sendBtn.addEventListener('click', handleSend);
+clearBtn.addEventListener('click', () => {
+  messages = [{ role: "system", content: systemPrompt }];
+  messagesEl.innerHTML = '';
+  addWelcome();
+  input.focus();
+});
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' &&!e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+});
+modelSelect.addEventListener('change', async () => {
+  messages = [{ role: "system", content: systemPrompt }];
+  await initModel(modelSelect.value);
+});
+
+function addWelcome() {
+  addMessage('assistant', 'Hello! I’m the TEP Community Assistant.\n\nI run locally with Phi-3.5 and can search our local forum index. Ask about Concordat, Magisterium, citizenship, or anything else — I’ll cite the relevant forum threads.');
+}
+
+// Init
+addWelcome();
+initModel(modelSelect.value);
+setTimeout(() => input.focus(), 300);
+</script>
+</body>
+</html>
